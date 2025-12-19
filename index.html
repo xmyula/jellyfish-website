@@ -134,12 +134,11 @@ canvas {
 </div>
 
 <script>
-  window.onload = () => {
-  startRankingAutoUpdate();
-    gameLoop();
-
+window.onload = () => {
+  showRanking();
+  setInterval(showRanking, 5000);
+  gameLoop();
 };
-
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -516,11 +515,6 @@ if (anyOverTop) {
 
   requestAnimationFrame(gameLoop);
 }
-window.onload = () => {
-  showRanking();
-  setInterval(showRanking, 5000);
-  gameLoop();
-};
   
 function isColliding(a, b) {
   const dx = a.x - b.x;
@@ -665,18 +659,7 @@ function showRanking() {
     });
 }
 
-    if (myRank !== null) {
-      const rankInfo = document.createElement("div");
-      rankInfo.style.marginTop = "8px";
-      rankInfo.style.fontSize = "14px";
-      rankInfo.style.textAlign = "center";
-      rankInfo.innerHTML = `你目前第 <b>${myRank}</b> 名`;
-
-      list.appendChild(rankInfo);
-    }
-  });
-}
-
+    
 let rankingTimer = null;
 let playerName = null;
 
@@ -691,38 +674,9 @@ function stopRankingAutoUpdate() {
     rankingTimer = null;
   }
 }
-canvas.focus();
-gameLoop();
 
-setTimeout(() => {
-  showRanking();
-}, 1000);
 const RANKING_API =
   "https://script.google.com/macros/s/AKfycbz4eLqftorbn4OW3-Y5h-b7XMehahhc5oYxaKBVYJhaweI_9gLewoUsuEnXwdgsj27f5w/exec";
-
-function loadRanking() {
-  fetch(RANKING_API)
-    .then(res => res.json())
-    .then(data => {
-      const list = document.getElementById("rankingList");
-      list.innerHTML = "";
-
-      data.forEach((r, i) => {
-        const li = document.createElement("li");
-        li.textContent = `${i + 1}. ${r.name} - ${r.score} 分`;
-        list.appendChild(li);
-      });
-    })
-    .catch(err => {
-      console.error("排行榜讀取失敗", err);
-    });
-}
-
-// 一進頁面就讀一次
-loadRanking();
-
-// 每 5 秒更新一次
-setInterval(loadRanking, 5000);
 
 </script>
 
