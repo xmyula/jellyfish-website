@@ -697,6 +697,34 @@ gameLoop();
 setTimeout(() => {
   showRanking();
 }, 1000);
+<script>
+const RANKING_API =
+  "https://script.google.com/macros/s/AKfycbz4eLqftorbn4OW3-Y5h-b7XMehahhc5oYxaKBVYJhaweI_9gLewoUsuEnXwdgsj27f5w/exec";
+
+function loadRanking() {
+  fetch(RANKING_API)
+    .then(res => res.json())
+    .then(data => {
+      const list = document.getElementById("rankingList");
+      list.innerHTML = "";
+
+      data.forEach((r, i) => {
+        const li = document.createElement("li");
+        li.textContent = `${i + 1}. ${r.name} - ${r.score} 分`;
+        list.appendChild(li);
+      });
+    })
+    .catch(err => {
+      console.error("排行榜讀取失敗", err);
+    });
+}
+
+// 一進頁面就讀一次
+loadRanking();
+
+// 每 5 秒更新一次
+setInterval(loadRanking, 5000);
+</script>
 
 </script>
 
