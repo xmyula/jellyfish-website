@@ -505,6 +505,8 @@ if (anyOverTop) {
 
     if (elapsed > DANGER_TIME) {
       endGame();
+      saveScoreToServer(playerName, score);
+      setTimeout(showRanking, 500);
       return;
     }
   }
@@ -514,7 +516,12 @@ if (anyOverTop) {
 
   requestAnimationFrame(gameLoop);
 }
-
+window.onload = () => {
+  showRanking();
+  setInterval(showRanking, 5000);
+  gameLoop();
+};
+  
 function isColliding(a, b) {
   const dx = a.x - b.x;
   const dy = a.y - b.y;
@@ -630,40 +637,33 @@ const DANGER_TIME = 3000;
 
 let gameEnded = false;
 
-function endGame() {
-  if (gameEnded) return;
-  gameEnded = true;
-
-  stopRankingAutoUpdate();
-
-  playerName = prompt("遊戲結束！請輸入你的名字") || "匿名";
-
-  google.script.run
-    .withSuccessHandler(() => {
-      showRanking(); // 存完立刻更新
-    })
-    .saveScore(playerName, score);
+function saveScoreToServer(name, score) {
+  fetch(
+    RANKING_API +
+      "?action=save" +
+      "&name=" + encodeURIComponent(name) +
+      "&score=" + score
+  );
 }
 
+
 function showRanking() {
-  google.script.run.withSuccessHandler(data => {
-    const list = document.getElementById("rankingList");
-    list.innerHTML = "";
+  fetch(RANKING_API + "?action=get")
+    .then(res => res.json())
+    .then(data => {
+      const list = document.getElementById("rankingList");
+      list.innerHTML = "";
 
-    let myRank = null;
-
-    data.forEach((row, i) => {
-      const li = document.createElement("li");
-      li.textContent = `${row[0]} - ${row[1]} 分`;
-
-      if (playerName && row[0] === playerName && myRank === null) {
-        li.classList.add("me");
-        li.textContent += " 🔸";
-        myRank = i + 1;
-      }
-
-      list.appendChild(li);
+      data.forEach((row, i) => {
+        const li = document.createElement("li");
+        li.textContent = `${i + 1}. ${row[0]} - ${row[1]} 分`;
+        list.appendChild(li);
+      });
+    })
+    .catch(err => {
+      console.error("排行榜讀取失敗", err);
     });
+}
 
     if (myRank !== null) {
       const rankInfo = document.createElement("div");
@@ -674,7 +674,7 @@ function showRanking() {
 
       list.appendChild(rankInfo);
     }
-  }).getRanking();
+  });
 }
 
 let rankingTimer = null;
@@ -697,7 +697,6 @@ gameLoop();
 setTimeout(() => {
   showRanking();
 }, 1000);
-<script>
 const RANKING_API =
   "https://script.google.com/macros/s/AKfycbz4eLqftorbn4OW3-Y5h-b7XMehahhc5oYxaKBVYJhaweI_9gLewoUsuEnXwdgsj27f5w/exec";
 
@@ -724,7 +723,6 @@ loadRanking();
 
 // 每 5 秒更新一次
 setInterval(loadRanking, 5000);
-</script>
 
 </script>
 
