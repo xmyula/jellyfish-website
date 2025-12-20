@@ -650,6 +650,11 @@ function showRanking() {
         const li = document.createElement("li");
         li.textContent = `${row[0]} - ${row[1]} 分`;
         list.appendChild(li);
+        
+        if (playerName && row[0] === playerName && myRank === null) {
+        li.classList.add("me");
+        li.textContent += " 🔸";
+        myRank = i + 1;
       });
     })
     .catch(err => {
