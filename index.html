@@ -423,36 +423,37 @@ function gameLoop() {
   ctx.fillRect(0, groundY, canvas.width, 5);
 
 
-  if (currentJellyfish) {
-    currentJellyfish.update();
-    clampJellyfish(currentJellyfish);
-    currentJellyfish.draw();
+if (currentJellyfish) {
+  currentJellyfish.update();
+  clampJellyfish(currentJellyfish);
+  currentJellyfish.draw();
 
- if (currentJellyfish && currentJellyfish.isDropping) {
-  let landingY = groundY - currentJellyfish.radius;
+  if (currentJellyfish.isDropping) {
+    let landingY = groundY - currentJellyfish.radius;
 
-  for (const j of jellyfishes) {
-    const dx = Math.abs(currentJellyfish.x - j.x);
-    const overlapX = dx < currentJellyfish.radius + j.radius;
+    for (const j of jellyfishes) {
+      const dx = Math.abs(currentJellyfish.x - j.x);
+      const overlapX = dx < currentJellyfish.radius + j.radius;
 
-    if (overlapX) {
-      const possibleY =
-        j.y - j.radius - currentJellyfish.radius - SPACING;
-      if (possibleY < landingY) {
-        landingY = possibleY;
+      if (overlapX) {
+        const possibleY =
+          j.y - j.radius - currentJellyfish.radius - SPACING;
+        if (possibleY < landingY) {
+          landingY = possibleY;
+        }
       }
+    } 
+
+    if (currentJellyfish.y >= landingY) {
+      currentJellyfish.y = landingY;
+      currentJellyfish.vy = 0;
+      currentJellyfish.isDropping = false;
+      currentJellyfish.isSleeping = true;
+
+      jellyfishes.push(currentJellyfish);
+      currentJellyfish = createNewJellyfish();
     }
-
-  if (currentJellyfish.y >= landingY) {
-    currentJellyfish.y = landingY;
-    currentJellyfish.vy = 0;
-    currentJellyfish.isDropping = false;
-    currentJellyfish.isSleeping = true;
-
-    jellyfishes.push(currentJellyfish);
-    currentJellyfish = createNewJellyfish();
   }
-}
 }
 
   for (let i = 0; i < jellyfishes.length; i++) {
