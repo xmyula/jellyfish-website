@@ -135,10 +135,10 @@ canvas {
 
 <script>
 window.onload = () => {
-  showRanking();
-  setInterval(showRanking, 5000);
+  startRankingAutoUpdate();
   gameLoop();
 };
+
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -504,8 +504,6 @@ if (anyOverTop) {
 
     if (elapsed > DANGER_TIME) {
       endGame();
-      saveScoreToServer(playerName, score);
-      setTimeout(showRanking, 500);
       return;
     }
   }
@@ -659,7 +657,7 @@ function showRanking() {
     });
 }
 
-  function endGame() {
+function endGame() {
   if (gameEnded) return;
   gameEnded = true;
 
@@ -667,11 +665,8 @@ function showRanking() {
 
   setTimeout(() => {
     const name = prompt("遊戲結束！請輸入你的暱稱：", "匿名玩家");
-
     playerName = name && name.trim() !== "" ? name.trim() : "匿名玩家";
-
     saveScoreToServer(playerName, score);
-
     setTimeout(showRanking, 800);
   }, 100);
 }
@@ -681,7 +676,6 @@ let playerName = null;
 
 function startRankingAutoUpdate() {
   showRanking(); 
-  rankingTimer = setInterval(showRanking, 5000); 
 }
 
 function stopRankingAutoUpdate() {
