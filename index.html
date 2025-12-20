@@ -645,22 +645,27 @@ function showRanking() {
     .then(data => {
       const list = document.getElementById("rankingList");
       list.innerHTML = "";
+      myRank = null; // ⭐ 每次重算
 
       data.forEach((row, i) => {
         const li = document.createElement("li");
         li.textContent = `${row[0]} - ${row[1]} 分`;
-        list.appendChild(li);
-        
+
+        // ⭐ 標記自己
         if (playerName && row[0] === playerName && myRank === null) {
-        li.classList.add("me");
-        li.textContent += " 🔸";
-        myRank = i + 1;
+          li.classList.add("me");
+          li.textContent += " 🔸";
+          myRank = i + 1;
+        }
+
+        list.appendChild(li);
       });
     })
     .catch(err => {
       console.error("排行榜讀取失敗", err);
     });
 }
+
 
 function endGame() {
   if (gameEnded) return;
@@ -669,8 +674,8 @@ function endGame() {
   stopRankingAutoUpdate();
 
   setTimeout(() => {
-    const name = prompt("遊戲結束！請輸入你的暱稱：", "匿名玩家");
-    playerName = name && name.trim() !== "" ? name.trim() : "匿名玩家";
+    const name = prompt("遊戲結束！請輸入你的暱稱：");
+    playerName = name && name.trim() !== "" ? name.trim() : "匿名";
     saveScoreToServer(playerName, score);
     setTimeout(showRanking, 800);
   }, 100);
@@ -678,7 +683,8 @@ function endGame() {
     
 let rankingTimer = null;
 let playerName = null;
-
+let myRank = null
+  
 function startRankingAutoUpdate() {
   showRanking(); 
 }
