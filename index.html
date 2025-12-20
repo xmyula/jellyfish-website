@@ -650,7 +650,7 @@ function showRanking() {
 
       data.forEach((row, i) => {
         const li = document.createElement("li");
-        li.textContent = `${i + 1}. ${row[0]} - ${row[1]} 分`;
+        li.textContent = `${row[0]} - ${row[1]} 分`;
         list.appendChild(li);
       });
     })
@@ -659,6 +659,22 @@ function showRanking() {
     });
 }
 
+  function endGame() {
+  if (gameEnded) return;
+  gameEnded = true;
+
+  stopRankingAutoUpdate();
+
+  setTimeout(() => {
+    const name = prompt("遊戲結束！請輸入你的暱稱：", "匿名玩家");
+
+    playerName = name && name.trim() !== "" ? name.trim() : "匿名玩家";
+
+    saveScoreToServer(playerName, score);
+
+    setTimeout(showRanking, 800);
+  }, 100);
+}
     
 let rankingTimer = null;
 let playerName = null;
