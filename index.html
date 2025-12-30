@@ -649,10 +649,9 @@ function showRanking() {
       const list = document.getElementById("rankingList");
       list.innerHTML = "";
       // 只取前 10 名顯示
-      data.slice(0, 10).forEach((row, i) => {
+        data.slice(1, 11).forEach((row, i) => {
         const li = document.createElement("li");
-        // 根據你的 API 資料格式，如果是 row[0], row[1] 就維持這樣
-        li.textContent = `${row[0]} - ${row[1]} 分`;
+        li.textContent = `${row[1]} - ${row[2]} 分`;
         if (playerName && row[0] === playerName) {
           li.classList.add("me");
           li.textContent += " 🔸";
