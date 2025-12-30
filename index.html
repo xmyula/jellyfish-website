@@ -648,16 +648,29 @@ function showRanking() {
     .then(data => {
       const list = document.getElementById("rankingList");
       list.innerHTML = "";
-      // 只取前 10 名顯示
-        data.slice(1, 11).forEach((row, i) => {
+
+      if (!Array.isArray(data) || data.length === 0) {
         const li = document.createElement("li");
-        li.textContent = `${row[1]} - ${row[2]} 分`;
-        if (playerName && row[0] === playerName) {
+        li.textContent = "尚無排行榜資料";
+        list.appendChild(li);
+        return;
+      }
+
+      // ✅ 物件 API：只取前 10 名
+      data.slice(0, 10).forEach((item, i) => {
+        const li = document.createElement("li");
+        li.textContent = `${item.name ?? "匿名"} - ${item.score} 分`;
+
+        if (playerName && item.name === playerName) {
           li.classList.add("me");
           li.textContent += " 🔸";
         }
+
         list.appendChild(li);
       });
+    })
+    .catch(err => {
+      console.error(err);
     });
 }
 
