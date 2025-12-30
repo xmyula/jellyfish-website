@@ -25,58 +25,42 @@
     <button class="btn" onclick="location.href='index.html'">⬅ 回到遊戲</button>
   </div>
 
-  <script>
-    // 請填入你 GitHub 版專用的那個 API 網址
-    const RANKING_API = "https://script.google.com/macros/s/AKfycbz4eLqftorbn4OW3-Y5h-b7XMehahhc5oYxaKBVYJhaweI_9gLewoUsuEnXwdgsj27f5w/exec";
+ <script>
+const RANKING_API =
+  "https://script.google.com/macros/s/AKfycbz4eLqftorbn4OW3-Y5h-b7XMehahhc5oYxaKBVYJhaweI_9gLewoUsuEnXwdgsj27f5w/exec";
 
-    window.onload = function() {
-      fetch(RANKING_API + "?action=get")
-        .then(res => res.json())
-        .then(data => {
-          console.log(data);
-         .then(data => {
-  const status = document.getElementById('status');
-  const table = document.getElementById('rankTable');
-  const tbody = document.getElementById('rankData');
+window.onload = function () {
+  fetch(RANKING_API + "?action=get")
+    .then(res => res.json())
+    .then(data => {
+      console.log("排行榜資料：", data);
 
-  if (!Array.isArray(data)) {
-    status.innerText = "資料格式錯誤";
-    return;
-  }
+      const status = document.getElementById("status");
+      const table = document.getElementById("rankTable");
+      const tbody = document.getElementById("rankData");
 
-  if (data.length === 0) {
-    status.innerText = "目前尚無排行榜資料";
-    return;
-  }
+      // 防呆
+      if (!Array.isArray(data) || data.length === 0) {
+        status.innerText = "目前尚無排行榜資料";
+        return;
+      }
 
-  status.style.display = 'none';
-  table.style.display = 'table';
+      status.style.display = "none";
+      table.style.display = "table";
 
-  data.forEach((item, i) => {
-    const tr = tbody.insertRow();
-    tr.insertCell(0).innerText = i + 1;
-    tr.insertCell(1).innerText = item.name;
-    tr.insertCell(2).innerText = item.score;
-  });
-})
-
-          if (!data || data.length === 0) {
-            status.innerText = "目前沒有資料";
-            return;
-          }
-          status.style.display = 'none';
-          table.style.display = 'table';
-          data.slice(1).forEach((row, i) => {
-            const tr = tbody.insertRow();
-            tr.insertCell(0).innerText = i + 1;
-            tr.insertCell(1).innerText = row[0]; // 名字
-            tr.insertCell(2).innerText = row[1]; // 分數
-          });
-        })
-        .catch(err => {
-          document.getElementById('status').innerText = "連線失敗: " + err;
-        });
-    };
-  </script>
+      data.forEach((item, i) => {
+        const tr = tbody.insertRow();
+        tr.insertCell(0).innerText = i + 1;
+        tr.insertCell(1).innerText = item.name ?? "匿名";
+        tr.insertCell(2).innerText = item.score;
+      });
+    })
+    .catch(err => {
+      document.getElementById("status").innerText =
+        "連線失敗：" + err.message;
+      console.error(err);
+    });
+};
+</script>
 </body>
 </html>
