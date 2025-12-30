@@ -25,21 +25,20 @@
     <button class="btn" onclick="location.href='index.html'">⬅ 回到遊戲</button>
   </div>
 
- <script>
-const RANKING_API =
-  "https://script.google.com/macros/s/AKfycbz4eLqftorbn4OW3-Y5h-b7XMehahhc5oYxaKBVYJhaweI_9gLewoUsuEnXwdgsj27f5w/exec";
+<script>
+const RANKING_API = "https://script.google.com/macros/s/AKfycbz4eLqftorbn4OW3-Y5h-b7XMehahhc5oYxaKBVYJhaweI_9gLewoUsuEnXwdgsj27f5w/exec";
 
 window.onload = function () {
-  fetch(RANKING_API + "?action=get")
+  // 注意這裡網址加了 &all=true
+  fetch(RANKING_API + "?action=get&all=true")
     .then(res => res.json())
     .then(data => {
-      console.log("排行榜資料：", data);
+      console.log("排行榜完整資料：", data);
 
       const status = document.getElementById("status");
       const table = document.getElementById("rankTable");
       const tbody = document.getElementById("rankData");
 
-      // 防呆
       if (!Array.isArray(data) || data.length === 0) {
         status.innerText = "目前尚無排行榜資料";
         return;
@@ -47,25 +46,18 @@ window.onload = function () {
 
       status.style.display = "none";
       table.style.display = "table";
+      tbody.innerHTML = ""; // 清空內容
 
-     data.forEach((item, i) => {
-  const tr = tbody.insertRow();
-  
-  // 排名
-  tr.insertCell(0).innerText = i + 1;
-  
-  // 名字 (對應 GAS 的 r[0])
-  const name = item[0] || "匿名";
-  tr.insertCell(1).innerText = name;
-  
-  // 分數 (對應 GAS 的 r[1])
-  const score = item[1] || 0;
-  tr.insertCell(2).innerText = score;
-});
+      data.forEach((item, i) => {
+        const tr = tbody.insertRow();
+        tr.insertCell(0).innerText = i + 1;
+        // 核心修正：GAS 回傳是陣列，item[0] 是名字，item[1] 是分數
+        tr.insertCell(1).innerText = item[0] || "匿名";
+        tr.insertCell(2).innerText = item[1] || 0;
+      });
     })
     .catch(err => {
-      document.getElementById("status").innerText =
-        "連線失敗：" + err.message;
+      document.getElementById("status").innerText = "連線失敗：" + err.message;
       console.error(err);
     });
 };
