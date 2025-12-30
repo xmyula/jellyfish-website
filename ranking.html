@@ -34,9 +34,32 @@
         .then(res => res.json())
         .then(data => {
           console.log(data);
-          const status = document.getElementById('status');
-          const table = document.getElementById('rankTable');
-          const tbody = document.getElementById('rankData');
+         .then(data => {
+  const status = document.getElementById('status');
+  const table = document.getElementById('rankTable');
+  const tbody = document.getElementById('rankData');
+
+  if (!Array.isArray(data)) {
+    status.innerText = "資料格式錯誤";
+    return;
+  }
+
+  if (data.length === 0) {
+    status.innerText = "目前尚無排行榜資料";
+    return;
+  }
+
+  status.style.display = 'none';
+  table.style.display = 'table';
+
+  data.forEach((item, i) => {
+    const tr = tbody.insertRow();
+    tr.insertCell(0).innerText = i + 1;
+    tr.insertCell(1).innerText = item.name;
+    tr.insertCell(2).innerText = item.score;
+  });
+})
+
           if (!data || data.length === 0) {
             status.innerText = "目前沒有資料";
             return;
