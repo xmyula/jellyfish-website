@@ -655,18 +655,21 @@ function showRanking() {
         return;
       }
 
-   data.slice(0, 10).forEach((item, i) => {
+ data.slice(0, 10).forEach((item, i) => {
+  const list = document.getElementById("rankingList"); // 確保抓到清單
   const li = document.createElement("li");
-  const name = (Array.isArray(item) ? item[0] : item.name) || "匿名";
-  const val = (Array.isArray(item) ? item[1] : item.score) || 0;
+  
+  // 核心修正：GAS 回傳的是 [名字, 分數, 時間]
+  // 所以 item[0] 是名字，item[1] 是分數
+  const name = item[0] || "匿名";
+  const scoreVal = item[1] || 0;
 
-  li.textContent = `${name} - ${val} 分`;
+  li.textContent = `${name} - ${scoreVal} 分`;
 
   if (playerName && name === playerName) {
     li.classList.add("me");
     li.textContent += " 🔸";
   }
-
   list.appendChild(li);
 });
     })
