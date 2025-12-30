@@ -33,6 +33,7 @@
       fetch(RANKING_API + "?action=get")
         .then(res => res.json())
         .then(data => {
+          console.log(data);
           const status = document.getElementById('status');
           const table = document.getElementById('rankTable');
           const tbody = document.getElementById('rankData');
@@ -42,7 +43,7 @@
           }
           status.style.display = 'none';
           table.style.display = 'table';
-          data.forEach((row, i) => {
+          data.slice(1).forEach((row, i) => {
             const tr = tbody.insertRow();
             tr.insertCell(0).innerText = i + 1;
             tr.insertCell(1).innerText = row[0]; // 名字
