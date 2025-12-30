@@ -1,73 +1,58 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <base target="_top">
   <meta charset="UTF-8">
+  <title>完整排行榜</title>
   <style>
     body { font-family: sans-serif; background-color: #e0f2f1; text-align: center; padding: 20px; }
-    .container { background: white; padding: 20px; border-radius: 15px; display: inline-block; min-width: 300px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .container { background: white; padding: 20px; border-radius: 15px; display: inline-block; min-width: 320px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
     table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; }
+    th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: center; }
     th { background: #00796b; color: white; }
     .btn { margin-top: 20px; padding: 10px 20px; background: #00796b; color: white; border: none; border-radius: 5px; cursor: pointer; }
   </style>
 </head>
 <body>
-
   <div class="container">
     <h2>🏆 完整排行榜</h2>
-    <div id="status">正在連線至資料庫...</div>
+    <div id="status">正在從資料庫讀取...</div>
     <table id="rankTable" style="display:none;">
       <thead>
         <tr><th>排名</th><th>名字</th><th>分數</th></tr>
       </thead>
       <tbody id="rankData"></tbody>
     </table>
-    
-    <button class="btn" onclick="backToGame()">⬅ 回到遊戲</button>
+    <button class="btn" onclick="location.href='index.html'">⬅ 回到遊戲</button>
   </div>
 
   <script>
+    // 請填入你 GitHub 版專用的那個 API 網址
+    const RANKING_API = "https://script.google.com/macros/s/AKfycbz4eLqftorbn4OW3-Y5h-b7XMehahhc5oYxaKBVYJhaweI_9gLewoUsuEnXwdgsj27f5w/exec";
+
     window.onload = function() {
-      try {
-        console.log("正在請求資料...");
-        google.script.run
-          .withSuccessHandler(renderTable)
-          .withFailureHandler(function(err) {
-            document.getElementById('status').innerText = "抓取失敗: " + err;
-          })
-          .getAllRanking();
-      } catch (e) {
-        alert("JS執行錯誤: " + e.message);
-      }
+      fetch(RANKING_API + "?action=get")
+        .then(res => res.json())
+        .then(data => {
+          const status = document.getElementById('status');
+          const table = document.getElementById('rankTable');
+          const tbody = document.getElementById('rankData');
+          if (!data || data.length === 0) {
+            status.innerText = "目前沒有資料";
+            return;
+          }
+          status.style.display = 'none';
+          table.style.display = 'table';
+          data.forEach((row, i) => {
+            const tr = tbody.insertRow();
+            tr.insertCell(0).innerText = i + 1;
+            tr.insertCell(1).innerText = row[0]; // 名字
+            tr.insertCell(2).innerText = row[1]; // 分數
+          });
+        })
+        .catch(err => {
+          document.getElementById('status').innerText = "連線失敗: " + err;
+        });
     };
-
-    function renderTable(data) {
-      var status = document.getElementById('status');
-      var table = document.getElementById('rankTable');
-      var tbody = document.getElementById('rankData');
-      
-      if (!data || data.length === 0) {
-        status.innerText = "目前沒有資料";
-        return;
-      }
-      
-      status.style.display = 'none';
-      table.style.display = 'table';
-      
-      data.forEach(function(item, i) {
-        var row = tbody.insertRow();
-        row.insertCell(0).innerText = i + 1;
-        row.insertCell(1).innerText = item.name;
-        row.insertCell(2).innerText = item.score;
-      });
-    }
-
-    function backToGame() {
-      // 取得由 Code.gs 傳入的網址
-      var url = "<?!= ScriptApp.getService().getUrl() ?>";
-      window.top.location.href = url;
-    }
   </script>
 </body>
 </html>
