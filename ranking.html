@@ -49,11 +49,16 @@ window.onload = function () {
       table.style.display = "table";
 
       data.forEach((item, i) => {
-        const tr = tbody.insertRow();
-        tr.insertCell(0).innerText = i + 1;
-        tr.insertCell(1).innerText = item.name ?? "匿名";
-        tr.insertCell(2).innerText = item.score;
-      });
+  const tr = tbody.insertRow();
+  tr.insertCell(0).innerText = i + 1;
+
+  // 自動判斷資料格式：如果是試算表直接噴出來的 [名, 分]，就抓索引
+  const name = (Array.isArray(item) ? item[0] : (item.name ?? "匿名"));
+  const score = (Array.isArray(item) ? item[1] : (item.score ?? 0));
+
+  tr.insertCell(1).innerText = name;
+  tr.insertCell(2).innerText = score;
+});
     })
     .catch(err => {
       document.getElementById("status").innerText =
