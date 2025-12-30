@@ -655,21 +655,20 @@ function showRanking() {
         return;
       }
 
-      data.slice(0, 10).forEach((item, i) => {
-        const li = document.createElement("li");
-        
-        // 修正處：自動判斷是 item.name 還是 item[0]
-        const name = item.name || (Array.isArray(item) ? item[0] : "匿名");
-        const scoreVal = (item.score !== undefined) ? item.score : (Array.isArray(item) ? item[1] : 0);
-        
-        li.textContent = `${name} - ${scoreVal} 分`;
+   data.slice(0, 10).forEach((item, i) => {
+  const li = document.createElement("li");
+  const name = (Array.isArray(item) ? item[0] : item.name) || "匿名";
+  const val = (Array.isArray(item) ? item[1] : item.score) || 0;
 
-        if (playerName && name === playerName) {
-          li.classList.add("me");
-          li.textContent += " 🔸";
-        }
-        list.appendChild(li);
-      });
+  li.textContent = `${name} - ${val} 分`;
+
+  if (playerName && name === playerName) {
+    li.classList.add("me");
+    li.textContent += " 🔸";
+  }
+
+  list.appendChild(li);
+});
     })
     .catch(err => {
       console.error("讀取失敗:", err);
