@@ -646,31 +646,34 @@ function showRanking() {
   fetch(RANKING_API + "?action=get")
     .then(res => res.json())
     .then(data => {
+      console.log("原始資料檢查：", data); // 按 F12 檢查這裡
       const list = document.getElementById("rankingList");
       list.innerHTML = "";
 
       if (!Array.isArray(data) || data.length === 0) {
-        const li = document.createElement("li");
-        li.textContent = "尚無排行榜資料";
-        list.appendChild(li);
+        list.innerHTML = "<li>目前尚無資料</li>";
         return;
       }
 
-      // ✅ 物件 API：只取前 10 名
       data.slice(0, 10).forEach((item, i) => {
         const li = document.createElement("li");
-        li.textContent = `${item.name ?? "匿名"} - ${item.score} 分`;
+        
+        // 修正處：自動判斷是 item.name 還是 item[0]
+        const name = item.name || (Array.isArray(item) ? item[0] : "匿名");
+        const scoreVal = (item.score !== undefined) ? item.score : (Array.isArray(item) ? item[1] : 0);
+        
+        li.textContent = `${name} - ${scoreVal} 分`;
 
-        if (playerName && item.name === playerName) {
+        if (playerName && name === playerName) {
           li.classList.add("me");
           li.textContent += " 🔸";
         }
-
         list.appendChild(li);
       });
     })
     .catch(err => {
-      console.error(err);
+      console.error("讀取失敗:", err);
+      document.getElementById("rankingList").innerHTML = "<li>連線錯誤</li>";
     });
 }
 
