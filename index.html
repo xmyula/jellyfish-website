@@ -145,9 +145,12 @@ canvas {
   查看完整排行
 </button>
 </div>
-
 <script>
-  let currentUser = null;
+let currentUser = null;
+let rankingTimer = null;
+let gameEnded = false;
+let score = 0;
+const RANKING_API = "https://script.google.com/macros/s/AKfycbzWt6d0fNs-cnpm-qd1BXWXrBFAD-ju1Rjgfu-VQAxlTttWSQzE8IosFCwnkm5X5-FRkw/exec";
 
 function login() {
   const user = document.getElementById("authUser").value;
@@ -157,26 +160,27 @@ function login() {
   const msg = document.getElementById("loginMsg");
   msg.innerText = "驗證中...";
 
-  fetch(`${RANKING_API}?action=login&user=${user}&pass=${pass}`)
+  fetch(`${RANKING_API}?action=login&user=${encodeURIComponent(user)}&pass=${encodeURIComponent(pass)}`)
     .then(res => res.json())
     .then(data => {
       if(data.success) {
-        currentUser = user; // 記住目前的玩家
+        currentUser = user;
         document.getElementById("authOverlay").style.display = "none";
         alert(data.msg || "登入成功！");
+        showRanking(); // 登入後立即顯示排行
       } else {
         msg.innerText = data.msg;
       }
-    });
+    }).catch(err => { msg.innerText = "連線失敗，請檢查 GAS 部署"; });
 }
+
 window.onload = () => {
-  startRankingAutoUpdate();
+  showRanking();
   gameLoop();
 };
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-
 
 const jellyfishImages = {
   1: "https://lh3.googleusercontent.com/d/1Yvajk0RLnuHwb4TLZ4Of0W4W4M9lHo7F",
@@ -193,8 +197,7 @@ const jellyfishImages = {
 
 };
 
-  const imageCache = {};
-
+const imageCache = {};
 for (let i = 1; i <= 11; i++) {
   const img = new Image();
   img.src = jellyfishImages[i];
@@ -680,27 +683,27 @@ function showRanking() {
     .then(data => {
       const list = document.getElementById("rankingList");
       list.innerHTML = "";
-      data.forEach((item, i) => {
-        const li = document.createElement("li");
-        const name = item[0] || "匿名";
-        const scoreVal = item[1] || 0; // index 1 是分數
-        li.textContent = `${name} - ${scoreVal} 分`;
-        if (currentUser && name === currentUser) {
-          li.classList.add("me");
-          li.textContent += " 🔸";
-        }
-        list.appendChild(li);
-      });
+      if (Array.isArray(data)) {
+        data.forEach((item, i) => {
+          const li = document.createElement("li");
+          const name = item[0] || "匿名";
+          const scoreVal = item[1] || 0;
+          li.textContent = `${name} - ${scoreVal} 分`;
+          if (currentUser && name === currentUser) {
+            li.style.color = "red";
+            li.style.fontWeight = "bold";
+            li.textContent += " 🔸";
+          }
+          list.appendChild(li);
+        });
+      }
     });
 }
 
 function endGame() {
   if (gameEnded) return;
   gameEnded = true;
-  stopRankingAutoUpdate();
-
   if (currentUser) {
-    // 自動存檔並刷新排行
     fetch(`${RANKING_API}?action=save&user=${encodeURIComponent(currentUser)}&score=${score}`)
       .then(() => {
         alert(`遊戲結束！${currentUser} 你的得分是: ${score}`);
@@ -708,18 +711,6 @@ function endGame() {
       });
   }
 }
-
-function stopRankingAutoUpdate() {
-  if (rankingTimer) {
-    clearInterval(rankingTimer);
-    rankingTimer = null;
-  }
-}
-
-const RANKING_API =
-  "https://script.google.com/macros/s/AKfycbzWt6d0fNs-cnpm-qd1BXWXrBFAD-ju1Rjgfu-VQAxlTttWSQzE8IosFCwnkm5X5-FRkw/exec";
-
 </script>
-
 </body>
 </html>
