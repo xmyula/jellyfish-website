@@ -26,40 +26,28 @@
   </div>
 
 <script>
-const RANKING_API = "https://script.google.com/macros/s/AKfycbwpg7rHALUnoCVj79YUwcZRguo74M57OGWBXEmQP03x3vp4g_3hFyz9M9yu0dSP33NK2w/exec";
+// 重要：這裡的網址必須跟 index.html 的一樣
+const RANKING_API = "https://script.google.com/macros/s/AKfycbzWt6d0fNs-cnpm-qd1BXWXrBFAD-ju1Rjgfu-VQAxlTttWSQzE8IosFCwnkm5X5-FRkw/exec";
 
-  window.onload = function () {
+window.onload = function () {
   fetch(RANKING_API + "?action=get&all=true")
     .then(res => res.json())
     .then(data => {
       const tbody = document.getElementById("rankData");
       tbody.innerHTML = "";
-      data.forEach((item, i) => {
-        const tr = tbody.insertRow();
-        tr.insertCell(0).innerText = i + 1;
-        tr.insertCell(1).innerText = item[0] || "匿名"; // 名字
-        tr.insertCell(2).innerText = item[1] || 0;    // 分數 (對應 GAS 的 r[2])
-      });
-      document.getElementById("status").style.display = "none";
-      document.getElementById("rankTable").style.display = "table";
-    });
-};
-
-      status.style.display = "none";
-      table.style.display = "table";
-      tbody.innerHTML = ""; // 清空內容
-
-      data.forEach((item, i) => {
-        const tr = tbody.insertRow();
-        tr.insertCell(0).innerText = i + 1;
-        // 核心修正：GAS 回傳是陣列，item[0] 是名字，item[1] 是分數
-        tr.insertCell(1).innerText = item[0] || "匿名";
-        tr.insertCell(2).innerText = item[1] || 0;
-      });
+      if (Array.isArray(data)) {
+        data.forEach((item, i) => {
+          const tr = tbody.insertRow();
+          tr.insertCell(0).innerText = i + 1;
+          tr.insertCell(1).innerText = item[0] || "匿名";
+          tr.insertCell(2).innerText = item[1] || 0;
+        });
+        document.getElementById("status").style.display = "none";
+        document.getElementById("rankTable").style.display = "table";
+      }
     })
     .catch(err => {
       document.getElementById("status").innerText = "連線失敗：" + err.message;
-      console.error(err);
     });
 };
 </script>
