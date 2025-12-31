@@ -160,20 +160,19 @@ function login() {
 
   document.getElementById("loginMsg").innerText = "驗證中...";
 
-
-  fetch(`${RANKING_API}?action=login&user=${encodeURIComponent(user)}&pass=${encodeURIComponent(pass)}`)
-    .then(res => res.json())
-    .then(data => {
-      if(data.success) {
-        currentUser = user; 
-        document.getElementById("authOverlay").style.display = "none";
-        alert(data.msg || "登入成功！");
-        showRanking(); // 登入後立即抓取排行榜
-      } else {
-        msg.innerText = data.msg;
-      }
-    }).catch(err => { msg.innerText = "連線失敗，請檢查網路或 GAS 部署"; });
+  const script = document.createElement("script");
+  script.src = `${RANKING_API}?action=login&user=${encodeURIComponent(user)}&pass=${encodeURIComponent(pass)}&callback=handleLogin`;
+  document.body.appendChild(script);
 }
+
+function handleSave(data) {
+  if(data.ok){
+    console.log("分數已存檔:", data.msg);
+    showRanking();
+  }
+}
+  
+  
 window.onload = () => {
   showRanking();
   gameLoop();
@@ -662,53 +661,47 @@ function mergeJellyfish(i, j) {
 let overTopStartTime = null;
 const DANGER_TIME = 3000; 
 
-function saveScoreToServer(name, score) {
-  fetch(
-    RANKING_API +
-      "?action=save" +
-      "&name=" + encodeURIComponent(name) +
-      "&score=" + score
-  );
+function saveScoreToServer(score) {
+  if(!currentUser) return;
+  const script = document.createElement("script");
+  script.src = `${RANKING_API}?action=save&user=${encodeURIComponent(currentUser)}&score=${score}&callback=handleSave`;
+  document.body.appendChild(script);
 }
 
-
-function showRanking() {
-  fetch(RANKING_API + "?action=get")
-    .then(res => res.json())
-    .then(data => {
-      const list = document.getElementById("rankingList");
-      list.innerHTML = "";
-      if (Array.isArray(data)) {
-        // 只取前 10 名
-        data.slice(0, 10).forEach((item, i) => {
-          const li = document.createElement("li");
-          const name = item[0] || "匿名";
-          const scoreVal = item[1] || 0;
-          li.textContent = `${name} - ${scoreVal} 分`;
-          // 如果是目前登入的玩家，標註紅色
-          if (currentUser && name === currentUser) {
-            li.style.color = "#d32f2f";
-            li.style.fontWeight = "bold";
-            li.textContent += " 🔸";
-          }
-          list.appendChild(li);
-        });
+function handleRanking(data){
+  const list = document.getElementById("rankingList");
+  list.innerHTML = "";
+  if(Array.isArray(data)) {
+    data.slice(0,10).forEach(item => {
+      const li = document.createElement("li");
+      const name = item[0] || "匿名";
+      const scoreVal = item[1] || 0;
+      li.textContent = `${name} - ${scoreVal} 分`;
+      if(currentUser && name === currentUser){
+        li.style.color = "#d32f2f";
+        li.style.fontWeight = "bold";
+        li.textContent += " 🔸";
       }
-    }).catch(e => console.error("抓取排行失敗:", e));
+      list.appendChild(li);
+    });
+  }
 }
 function endGame() {
-  if (gameEnded) return;
+  if(gameEnded) return;
   gameEnded = true;
-  if (currentUser) {
-    fetch(`${RANKING_API}?action=save&user=${encodeURIComponent(currentUser)}&score=${score}`)
-      .then(() => {
-        alert(`遊戲結束！${currentUser} 你的得分是: ${score}`);
-        showRanking();
-      });
+  if(currentUser){
+    saveScoreToServer(score);
+    alert(`遊戲結束！${currentUser} 你的得分是: ${score}`);
   } else {
     alert(`遊戲結束！你的得分是: ${score}`);
   }
 }
+
+window.onload = () => {
+  showRanking();
+  gameLoop();
+};
+  
 </script>
   
 </body>
