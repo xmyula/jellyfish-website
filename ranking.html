@@ -26,31 +26,29 @@
   </div>
 
 <script>
-const API = "https://script.google.com/macros/s/AKfycby8tx2elij74l99z-l7B3e21pTDdPSXTniuPAke5td7wq1ck8CFymmh3rNqA3KwUHhEvw/exec";
+const API = "https://script.google.com/macros/s/你的ID/exec";
 
-fetch(`${API}?action=get&all=true`)
-  .then(res => res.json())
-  .then(data => {
-    const tbody = document.getElementById("rankData");
-    document.getElementById("status").style.display = "none";
-    document.getElementById("rankTable").style.display = "table";
+// JSONP callback
+function handleRanking(data){
+  const tbody = document.getElementById("rankData");
+  document.getElementById("status").style.display = "none";
+  document.getElementById("rankTable").style.display = "table";
 
-    data.forEach((r, i) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${i + 1}</td>
-        <td>${r[0]}</td>
-        <td>${r[1]}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  })
-  .catch(err => {
-    document.getElementById("status").textContent = "讀取失敗：" + err;
-    console.error(err);
+  data.forEach((r, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td>${r[0]}</td>
+      <td>${r[1]}</td>
+    `;
+    tbody.appendChild(tr);
   });
-  
-</script>
+}
 
+// 動態插入 script 取 JSONP
+const script = document.createElement('script');
+script.src = API + '?action=get&all=true&callback=handleRanking';
+document.body.appendChild(script);
+</script>
 </body>
 </html>
