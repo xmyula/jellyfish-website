@@ -31,8 +31,9 @@ const API = "https://script.google.com/macros/s/你的部署ID/exec";
 fetch(`${API}?action=get&all=true`)
   .then(res => res.json())
   .then(data => {
-    const tbody = document.getElementById("list");
-
+    const tbody = document.getElementById("rankData");
+    document.getElementById("status").style.display = "none";
+    document.getElementById("rankTable").style.di
     data.forEach((r, i) => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
