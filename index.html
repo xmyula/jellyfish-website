@@ -102,7 +102,17 @@ canvas {
 </head>
 
 <body>
-
+  
+<div id="authOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; display:flex; justify-content:center; align-items:center;">
+  <div style="background:white; padding:30px; border-radius:15px; text-align:center;">
+    <h3>🪼 登入以開始遊戲</h3>
+    <input type="text" id="authUser" placeholder="帳號" style="display:block; margin:10px auto; padding:8px;">
+    <input type="password" id="authPass" placeholder="密碼" style="display:block; margin:10px auto; padding:8px;">
+    <button onclick="login()" style="padding:8px 20px; background:#00796b; color:white; border:none; border-radius:5px; cursor:pointer;">進入遊戲</button>
+    <p id="loginMsg" style="color:red; font-size:12px;"></p>
+  </div>
+</div>
+  
 <h2 style="text-align:center;">合成大水母 🪼</h2>
 
 <div id="helpBox">
@@ -137,6 +147,28 @@ canvas {
 </div>
 
 <script>
+  let currentUser = null;
+
+function login() {
+  const user = document.getElementById("authUser").value;
+  const pass = document.getElementById("authPass").value;
+  if(!user || !pass) return alert("請輸入帳密");
+
+  const msg = document.getElementById("loginMsg");
+  msg.innerText = "驗證中...";
+
+  fetch(`${RANKING_API}?action=login&user=${user}&pass=${pass}`)
+    .then(res => res.json())
+    .then(data => {
+      if(data.success) {
+        currentUser = user; // 記住目前的玩家
+        document.getElementById("authOverlay").style.display = "none";
+        alert(data.msg || "登入成功！");
+      } else {
+        msg.innerText = data.msg;
+      }
+    });
+}
 window.onload = () => {
   startRankingAutoUpdate();
   gameLoop();
@@ -711,7 +743,7 @@ function stopRankingAutoUpdate() {
 }
 
 const RANKING_API =
-  "https://script.google.com/macros/s/AKfycbwpg7rHALUnoCVj79YUwcZRguo74M57OGWBXEmQP03x3vp4g_3hFyz9M9yu0dSP33NK2w/exec";
+  "https://script.google.com/macros/s/AKfycbyWncfyzhAEJNmUmGCd7NdZ31qKItSY9_46asn5DFdaH7AmMADuH6t_dzOUFJB7c_0T9w/exec";
 
 </script>
 
