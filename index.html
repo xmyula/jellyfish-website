@@ -149,9 +149,11 @@ canvas {
 let currentUser = null;
 let rankingTimer = null;
 let gameEnded = false; 
+let score = 0; 
 let overTopStartTime = null; 
 const DANGER_TIME = 3000;
 const RANKING_API = "https://script.google.com/macros/s/AKfycbzWt6d0fNs-cnpm-qd1BXWXrBFAD-ju1Rjgfu-VQAxlTttWSQzE8IosFCwnkm5X5-FRkw/exec";
+
   
 function login() {
   const user = document.getElementById("authUser").value;
@@ -637,8 +639,6 @@ const scoreTable = {
   10: 55,
   11: 66
 };
-
-let score = 0;
 
 function mergeJellyfish(i, j) {
   const j1 = jellyfishes[i];
