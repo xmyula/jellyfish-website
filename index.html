@@ -151,7 +151,34 @@ let rankingTimer = null;
 let gameEnded = false; 
 let score = 0; 
 const RANKING_API = "https://script.google.com/macros/s/AKfycbzPg74W8-4MP9F96ThRlpD3lplTMp2k0G3fGfYFQw4O8mXpvgWhLeecj1l2IEM8BFJWVA/exec";
+// --- 修正後的 API 處理函數 ---
 
+// 1. 取得排行榜 (使用 JSONP)
+function showRanking() {
+  const script = document.createElement("script");
+  // 注意：確保 action=get
+  script.src = `${RANKING_API}?action=get&callback=handleRanking`;
+  document.body.appendChild(script);
+}
+
+// 2. 處理登入結果
+function handleLogin(data) {
+  const msg = document.getElementById("loginMsg");
+  if (data.success) {
+    currentUser = document.getElementById("authUser").value;
+    document.getElementById("authOverlay").style.display = "none";
+    alert(data.msg || "登入成功！");
+    showRanking(); // 登入後更新排行榜
+  } else {
+    msg.innerText = data.msg;
+  }
+}
+
+// 3. 處理存檔結果
+function handleSave(data) {
+  console.log("存檔回傳:", data);
+  showRanking(); 
+}
   
 function login() {
   const user = document.getElementById("authUser").value;
@@ -164,43 +191,7 @@ function login() {
   script.src = `${RANKING_API}?action=login&user=${encodeURIComponent(user)}&pass=${encodeURIComponent(pass)}&callback=handleLogin`;
   document.body.appendChild(script);
 }
-
-  // 1. 新增：處理登入回傳的結果
-function handleLogin(data) {
-  const msg = document.getElementById("loginMsg");
-  if (data.success) {
-    currentUser = document.getElementById("authUser").value;
-    document.getElementById("authOverlay").style.display = "none";
-    alert(data.msg || "登入成功！");
-    showRanking(); // 登入後重新整理排行榜
-  } else {
-    msg.innerText = data.msg;
-  }
-}
-
-// 2. 修正：取得排行榜的函數（改用 JSONP 方式）
-function showRanking() {
-  const script = document.createElement("script");
-  script.src = `${RANKING_API}?action=get&callback=handleRanking`;
-  document.body.appendChild(script);
-}
-
-// 3. 確保存檔後能正確顯示訊息（與 GAS 對接）
-function handleSave(data) {
-  if (data.success) {
-    console.log("存檔成功:", data.msg);
-    showRanking();
-  }
-}
-
-function handleSave(data) {
-  if(data.ok){
-    console.log("分數已存檔:", data.msg);
-    showRanking();
-  }
-}
-  
-  
+ 
 window.onload = () => {
   showRanking();
   gameLoop();
@@ -686,8 +677,7 @@ function mergeJellyfish(i, j) {
   jellyfishes.push(new Jellyfish(x, y, newLevel));
 }
 
-let overTopStartTime = null;
-const DANGER_TIME = 3000; 
+  const DANGER_TIME = 3000; 
 
 function saveScoreToServer(score) {
   if(!currentUser) return;
@@ -724,11 +714,6 @@ function endGame() {
     alert(`遊戲結束！你的得分是: ${score}`);
   }
 }
-
-window.onload = () => {
-  showRanking();
-  gameLoop();
-};
   
 </script>
   
