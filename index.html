@@ -150,16 +150,16 @@ let currentUser = null;
 let rankingTimer = null;
 let gameEnded = false; 
 let score = 0; 
-const RANKING_API = "https://script.google.com/macros/s/AKfycbwjelhKmacQIbi3hLdKUkn4hNHE-iKWgg9lQiTtt87nbIQm33hX3GnE8el4J0hYMip1Kg/exec";
+const RANKING_API = "https://script.google.com/macros/s/AKfycbzPg74W8-4MP9F96ThRlpD3lplTMp2k0G3fGfYFQw4O8mXpvgWhLeecj1l2IEM8BFJWVA/exec";
 
   
 function login() {
   const user = document.getElementById("authUser").value;
   const pass = document.getElementById("authPass").value;
-  if(!user || !pass) return alert("請輸入帳密");
+  if(!user || !pass) return alert("請輸入帳號密碼");
 
-  const msg = document.getElementById("loginMsg");
-  msg.innerText = "驗證中...";
+  document.getElementById("loginMsg").innerText = "驗證中...";
+
 
   fetch(`${RANKING_API}?action=login&user=${encodeURIComponent(user)}&pass=${encodeURIComponent(pass)}`)
     .then(res => res.json())
