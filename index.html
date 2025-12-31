@@ -146,18 +146,44 @@ canvas {
 </button>
 </div>
 <script>
-// --- 1. 全域變數定義 (只在這裡宣告一次) ---
 let currentUser = null;
+let rankingTimer = null;
 let gameEnded = false; 
 let score = 0; 
 let overTopStartTime = null; 
-let nextLevel = Math.floor(Math.random() * 5) + 1;
-
 const DANGER_TIME = 3000;
-const SPACING = 4; 
 const RANKING_API = "https://script.google.com/macros/s/AKfycbzWt6d0fNs-cnpm-qd1BXWXrBFAD-ju1Rjgfu-VQAxlTttWSQzE8IosFCwnkm5X5-FRkw/exec";
 
-// --- 2. 圖片資源管理 ---
+  
+function login() {
+  const user = document.getElementById("authUser").value;
+  const pass = document.getElementById("authPass").value;
+  if(!user || !pass) return alert("請輸入帳密");
+
+  const msg = document.getElementById("loginMsg");
+  msg.innerText = "驗證中...";
+
+  fetch(`${RANKING_API}?action=login&user=${encodeURIComponent(user)}&pass=${encodeURIComponent(pass)}`)
+    .then(res => res.json())
+    .then(data => {
+      if(data.success) {
+        currentUser = user; 
+        document.getElementById("authOverlay").style.display = "none";
+        alert(data.msg || "登入成功！");
+        showRanking(); // 登入後立即抓取排行榜
+      } else {
+        msg.innerText = data.msg;
+      }
+    }).catch(err => { msg.innerText = "連線失敗，請檢查網路或 GAS 部署"; });
+}
+window.onload = () => {
+  showRanking();
+  gameLoop();
+};
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
 const jellyfishImages = {
   1: "https://cdn-icons-png.flaticon.com/128/2104/2104958.png",
   2: "https://cdn-icons-png.flaticon.com/128/2104/2104975.png",
@@ -179,190 +205,515 @@ for (let i = 1; i <= 11; i++) {
   imageCache[i] = img;
 }
 
-// --- 3. 初始化與 Canvas 設定 ---
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-const groundY = canvas.height - 20;
-const jellyfishes = [];
-
-window.onload = () => {
-  showRanking();
-  updateNextPreview();
-  gameLoop();
-};
-
-// --- 4. 遊戲核心邏輯 ---
-class Jellyfish {
-  constructor(x, y, level) {
-    this.x = x; this.y = y; this.level = level;
-    this.radius = 20 + Math.pow(level, 1.4) * 4;
-    this.vx = 0; this.vy = 0;
-    this.isDropping = false; this.isSleeping = false;
-  }
-  update() {
-    if (!this.isSleeping) this.vy = Math.min(this.vy + 1.5, 15);
-    this.x += this.vx; this.y += this.vy;
-    if (this.y + this.radius >= groundY) { this.y = groundY - this.radius; this.vy = 0; this.isSleeping = true; }
-    if (this.isSleeping) { this.vx *= 0.6; this.vy *= 0.6; }
-  }
-  draw() {
-    const img = imageCache[this.level];
-    if (img) ctx.drawImage(img, this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
-  }
+function randomLevel() {
+  return Math.floor(Math.random() * 5) + 1;
 }
 
-function createNewJellyfish() {
-  const j = new Jellyfish(canvas.width / 2, 50, nextLevel);
-  nextLevel = Math.floor(Math.random() * 5) + 1;
-  updateNextPreview();
-  j.isSleeping = true;
-  return j;
-}
+let nextLevel = randomLevel();
 
-let currentJellyfish = createNewJellyfish();
+const SPACING = 4; 
 
-function gameLoop() {
-  if (gameEnded) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
-  // 畫地板與分數
-  ctx.fillStyle = "#006064"; ctx.fillRect(0, groundY, canvas.width, 5);
-  ctx.fillStyle = "#004d40"; ctx.font = "20px Arial"; ctx.fillText(`Score: ${score}`, 10, 30);
-
-  if (currentJellyfish) {
-    currentJellyfish.update();
-    currentJellyfish.draw();
-    if (currentJellyfish.isDropping) {
-      let landingY = groundY - currentJellyfish.radius;
-      for (const j of jellyfishes) {
-        if (Math.abs(currentJellyfish.x - j.x) < currentJellyfish.radius + j.radius) {
-          let pos = j.y - j.radius - currentJellyfish.radius - SPACING;
-          if (pos < landingY) landingY = pos;
-        }
-      }
-      if (currentJellyfish.y >= landingY) {
-        currentJellyfish.y = landingY;
-        currentJellyfish.isDropping = false;
-        currentJellyfish.isSleeping = true;
-        jellyfishes.push(currentJellyfish);
-        currentJellyfish = createNewJellyfish();
-      }
-    }
+function clampJellyfish(j) {
+  // 左
+  if (j.x < j.radius) {
+    j.x = j.radius;
   }
 
-  for (let i = 0; i < jellyfishes.length; i++) {
-    for (let j = i + 1; j < jellyfishes.length; j++) {
-      const a = jellyfishes[i], b = jellyfishes[j];
-      const dx = a.x - b.x, dy = a.y - b.y;
-      if (Math.sqrt(dx*dx + dy*dy) < a.radius + b.radius - 1) {
-        if (a.level === b.level) { mergeJellyfish(i, j); break; }
-        else { resolveCollision(a, b); }
-      }
-    }
-    jellyfishes[i].update();
-    if (jellyfishes[i].x < jellyfishes[i].radius) jellyfishes[i].x = jellyfishes[i].radius;
-    if (jellyfishes[i].x > canvas.width - jellyfishes[i].radius) jellyfishes[i].x = canvas.width - jellyfishes[i].radius;
-    jellyfishes[i].draw();
+  // 右
+  if (j.x > canvas.width - j.radius) {
+    j.x = canvas.width - j.radius;
   }
 
-  checkGameOver();
-  requestAnimationFrame(gameLoop);
-}
-
-// --- 5. 功能函數 ---
-function mergeJellyfish(i, j) {
-  const j1 = jellyfishes[i], j2 = jellyfishes[j];
-  const scoreTable = { 1:1, 2:3, 3:6, 4:10, 5:15, 6:21, 7:28, 8:36, 9:45, 10:55, 11:66 };
-  score += scoreTable[j1.level];
-  const x = (j1.x + j2.x)/2, y = (j1.y + j2.y)/2, nL = j1.level + 1;
-  jellyfishes.splice(Math.max(i,j), 1);
-  jellyfishes.splice(Math.min(i,j), 1);
-  if (nL <= 11) jellyfishes.push(new Jellyfish(x, y, nL));
-}
-
-function resolveCollision(a, b) {
-  const dx = b.x - a.x, dy = b.y - a.y;
-  const dist = Math.sqrt(dx*dx + dy*dy);
-  const overlap = (a.radius + b.radius + SPACING) - dist;
-  if (overlap > 0 && dist > 0) {
-    const nx = dx/dist, ny = dy/dist;
-    a.x -= nx * overlap / 2; a.y -= ny * overlap / 2;
-    b.x += nx * overlap / 2; b.y += ny * overlap / 2;
-    a.isSleeping = b.isSleeping = false;
+  // 下（地板）
+  if (j.y > groundY - j.radius) {
+    j.y = groundY - j.radius;
+    j.vy = 0;
   }
-}
-
-function checkGameOver() {
-  if (jellyfishes.some(j => j.y - j.radius <= 50)) {
-    if (!overTopStartTime) overTopStartTime = Date.now();
-    let elapsed = Date.now() - overTopStartTime;
-    ctx.strokeStyle = "red"; ctx.lineWidth = 5; ctx.strokeRect(0,0,canvas.width,canvas.height);
-    if (elapsed > DANGER_TIME) endGame();
-  } else { overTopStartTime = null; }
 }
 
 function updateNextPreview() {
   const img = document.getElementById("nextImg");
-  if (img) img.src = jellyfishImages[nextLevel];
+  if (!img) return;
+  img.src = jellyfishImages[nextLevel];
 }
 
-// --- 6. 互動與 API 函數 ---
-function login() {
-  const user = document.getElementById("authUser").value;
-  const pass = document.getElementById("authPass").value;
-  const msg = document.getElementById("loginMsg");
-  if(!user || !pass) return alert("請輸入帳密");
-  msg.innerText = "驗證中...";
-  fetch(`${RANKING_API}?action=login&user=${encodeURIComponent(user)}&pass=${encodeURIComponent(pass)}`)
-    .then(res => res.json()).then(data => {
-      if(data.success) {
-        currentUser = user; document.getElementById("authOverlay").style.display = "none";
-        showRanking();
-      } else { msg.innerText = data.msg; }
-    }).catch(() => msg.innerText = "連線失敗");
+
+class Jellyfish {
+  constructor(x, y, level) {
+    this.x = x;
+    this.y = y;
+    this.level = level;
+    this.radius = 20 + Math.pow(level, 1.4) * 4;
+    this.vx = 0;
+    this.vy = 0;
+    this.isDropping = false;
+    this.isSleeping = false;
+    this.lastX = x;
+    this.lastY = y;
+    this.jitterCount = 0;
+    this.smoothSpeed = 0;
+    this.jitterLock = false;
+    this.jitterLockTimer = 0;
+
+  }
+
+update() {
+  if (!this.isSleeping) {
+    this.vy = Math.min(this.vy + 1.5, 15);
+  }
+
+  this.x += this.vx;
+  this.y += this.vy;
+
+  if (this.y + this.radius >= groundY) {
+    this.y = groundY - this.radius;
+    this.vy = 0;
+    this.isSleeping = true;
+  }
+
+ if (this.isSleeping) {
+  this.vx *= 0.6;
+  this.vy *= 0.6;
+
+  if (Math.abs(this.vx) < 0.02) this.vx = 0;
+  if (Math.abs(this.vy) < 0.02) this.vy = 0;
 }
 
-function showRanking() {
-  fetch(RANKING_API + "?action=get").then(res => res.json()).then(data => {
-    const list = document.getElementById("rankingList");
-    if (!list || !Array.isArray(data)) return;
-    list.innerHTML = "";
-    data.slice(0, 10).forEach(item => {
-      const li = document.createElement("li");
-      li.textContent = `${item[0]} - ${item[1]}分`;
-      if (currentUser && item[0] === currentUser) { li.style.color="red"; li.style.fontWeight="bold"; }
-      list.appendChild(li);
-    });
-  });
+if (hasSupport(this) && Math.abs(this.vy) < 0.6) {
+  this.vy *= 0.15;
 }
 
-function endGame() {
-  if (gameEnded) return;
-  gameEnded = true;
-  alert(`遊戲結束！得分: ${score}`);
-  if (currentUser) {
-    fetch(`${RANKING_API}?action=save&user=${encodeURIComponent(currentUser)}&score=${score}`)
-      .then(() => showRanking());
+const instantSpeed = Math.abs(this.vx) + Math.abs(this.vy);
+this.smoothSpeed = this.smoothSpeed * 0.85 + instantSpeed * 0.15;
+const dx = this.x - this.lastX;
+const dy = this.y - this.lastY;
+const moveDist = Math.sqrt(dx * dx + dy * dy);
+
+if (moveDist < 0.25 && this.smoothSpeed > 0.25) {
+  this.jitterCount++;
+
+  if (this.jitterCount > 12 && !this.jitterLock) {
+    this.jitterLock = true;
+    this.jitterLockTimer = 0;
+  }
+} else {
+  this.jitterCount = 0;
+}
+
+
+this.lastX = this.x;
+this.lastY = this.y;
+
+
+if (this.jitterCount > 40) {
+  this.vx = 0;
+  this.vy = 0;
+  this.isSleeping = true;
+  this.jitterCount = 0;
+}
+
+if (this.jitterLock) {
+  this.jitterLockTimer++;
+
+  if (Math.abs(this.vy) < 0.8) {
+    this.vy *= 0.1;
+  }
+
+  if (Math.abs(this.vx) < 0.8) {
+    this.vx *= 0.1;
+  }
+
+  if (this.jitterLockTimer > 24) {
+    this.jitterLock = false;
+    this.jitterLockTimer = 0;
   }
 }
 
-// 控制監聽
+}
+
+  draw() {
+    const img = imageCache[this.level];
+    if (!img) return;
+
+    ctx.drawImage(
+      img,
+      this.x - this.radius,
+      this.y - this.radius,
+      this.radius * 2,
+      this.radius * 2
+    );
+  }
+}
+
+function drawDangerOverlay(remainingTime) {
+  const alpha = Math.min(0.6, 1 - remainingTime / DANGER_TIME);
+
+  const gradient = ctx.createRadialGradient(
+    canvas.width / 2,
+    canvas.height / 2,
+    50,
+    canvas.width / 2,
+    canvas.height / 2,
+    Math.max(canvas.width, canvas.height)
+  );
+
+  gradient.addColorStop(0, `rgba(255,0,0,0)`);
+  gradient.addColorStop(1, `rgba(255,0,0,${alpha})`);
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 紅色邊框
+  ctx.strokeStyle = `rgba(255,0,0,${alpha + 0.2})`;
+  ctx.lineWidth = 8;
+  ctx.strokeRect(0, 0, canvas.width, canvas.height);
+}
+
+let currentJellyfish = createNewJellyfish();
+
+// 鍵盤控制
+document.addEventListener("keydown", e => {
+  if (["ArrowLeft", "ArrowRight", " "].includes(e.key)) {
+    e.preventDefault();
+  }
+  if (!currentJellyfish) return;
+
+  if (e.key === " ") {
+    currentJellyfish.isDropping = true;
+    currentJellyfish.isSleeping = false;
+  }
+  if (e.key === "ArrowLeft") {
+  currentJellyfish.x = Math.max(currentJellyfish.radius, currentJellyfish.x - 15);
+}
+if (e.key === "ArrowRight") {
+  currentJellyfish.x = Math.min(canvas.width - currentJellyfish.radius, currentJellyfish.x + 15);
+}
+
+});
+
+document.addEventListener("keyup", e => {
+  if (!currentJellyfish) return;
+
+  if (e.key === " ") {
+    currentJellyfish.isDropping = true;
+    currentJellyfish.isSleeping = false;
+  }
+});
+
+
+// 滑鼠控制
+canvas.addEventListener("mouseup", () => {
+  if (currentJellyfish) {
+    currentJellyfish.isDropping = true;
+    currentJellyfish.isSleeping = false; 
+  }
+});
+
+
 canvas.addEventListener("mousemove", e => {
   if (currentJellyfish && !currentJellyfish.isDropping) {
     currentJellyfish.x = e.offsetX;
-    if (currentJellyfish.x < currentJellyfish.radius) currentJellyfish.x = currentJellyfish.radius;
-    if (currentJellyfish.x > canvas.width - currentJellyfish.radius) currentJellyfish.x = canvas.width - currentJellyfish.radius;
+    clampJellyfish(currentJellyfish);
   }
 });
-canvas.addEventListener("mouseup", () => {
-  if (currentJellyfish) { currentJellyfish.isDropping = true; currentJellyfish.isSleeping = false; }
+
+/* =========================
+   ④ 測試：畫一隻水母
+========================= */
+
+function createNewJellyfish() {
+  const x = Math.random() * (canvas.width - 60) + 30;
+
+  const j = new Jellyfish(x, 50, nextLevel);
+
+  nextLevel = randomLevel();   
+  updateNextPreview();        
+
+  j.isSleeping = true;
+  return j;
+}
+
+const groundY = canvas.height - 20;
+const jellyfishes = [];
+
+function drawCountdown(remainingMs) {
+  const seconds = Math.ceil(remainingMs / 1000);
+
+  ctx.fillStyle = "rgba(255, 0, 0, 0.9)";
+  ctx.font = "bold 48px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  ctx.fillText(
+    seconds,
+    canvas.width / 2,
+    canvas.height / 2
+  );
+}
+
+
+function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  drawScore();
+
+  // 地板
+  ctx.fillStyle = "#006064";
+  ctx.fillRect(0, groundY, canvas.width, 5);
+
+
+if (currentJellyfish) {
+  currentJellyfish.update();
+  clampJellyfish(currentJellyfish);
+  currentJellyfish.draw();
+
+  if (currentJellyfish.isDropping) {
+    let landingY = groundY - currentJellyfish.radius;
+
+    for (const j of jellyfishes) {
+      const dx = Math.abs(currentJellyfish.x - j.x);
+      const overlapX = dx < currentJellyfish.radius + j.radius;
+
+      if (overlapX) {
+        const possibleY =
+          j.y - j.radius - currentJellyfish.radius - SPACING;
+        if (possibleY < landingY) {
+          landingY = possibleY;
+        }
+      }
+    } 
+
+    if (currentJellyfish.y >= landingY) {
+      currentJellyfish.y = landingY;
+      currentJellyfish.vy = 0;
+      currentJellyfish.isDropping = false;
+      currentJellyfish.isSleeping = true;
+
+      jellyfishes.push(currentJellyfish);
+      currentJellyfish = createNewJellyfish();
+    }
+  }
+}
+
+  for (let i = 0; i < jellyfishes.length; i++) {
+    for (let j = i + 1; j < jellyfishes.length; j++) {
+      const a = jellyfishes[i];
+      const b = jellyfishes[j];
+
+      if (isColliding(a, b)) {
+        if (a.level === b.level) {
+          mergeJellyfish(i, j);
+          break;
+        } else {
+          resolveCollision(a, b);
+          
+        }
+      }
+    }
+  }
+jellyfishes.forEach(j => {
+  if (!hasSupport(j)) {
+    j.isSleeping = false;
+  }
+
+  j.update();
+  clampJellyfish(j);
+  j.draw();
 });
-document.addEventListener("keydown", e => {
-  if (!currentJellyfish || currentJellyfish.isDropping) return;
-  if (e.key === "ArrowLeft") currentJellyfish.x = Math.max(currentJellyfish.radius, currentJellyfish.x - 25);
-  if (e.key === "ArrowRight") currentJellyfish.x = Math.min(canvas.width - currentJellyfish.radius, currentJellyfish.x + 25);
-  if (e.key === " ") { currentJellyfish.isDropping = true; currentJellyfish.isSleeping = false; }
-});
+
+
+ let anyOverTop = false;
+
+for (const j of jellyfishes) {
+  if (j.y - j.radius <= 0) {
+    anyOverTop = true;
+    break;
+  }
+}
+
+if (anyOverTop) {
+  if (overTopStartTime === null) {
+    overTopStartTime = Date.now();
+  } else {
+    const elapsed = Date.now() - overTopStartTime;
+    const remaining = Math.max(0, DANGER_TIME - elapsed);
+
+    drawDangerOverlay(remaining);
+    drawCountdown(remaining);
+
+    if (elapsed > DANGER_TIME) {
+      endGame();
+      return;
+    }
+  }
+} else {
+  overTopStartTime = null;
+}
+
+  requestAnimationFrame(gameLoop);
+}
+  
+function isColliding(a, b) {
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  return distance < a.radius + b.radius - 1;
+
+}
+
+function hasSupport(jelly) {
+  // 地板支撐
+  if (jelly.y + jelly.radius >= groundY - 1) {
+    return true;
+  }
+
+  // 其他水母支撐
+  for (const other of jellyfishes) {
+    if (other === jelly) continue;
+
+    const dx = Math.abs(jelly.x - other.x);
+    const overlapX = dx < jelly.radius + other.radius - 2;
+
+    const dy = other.y - jelly.y;
+    const touchingFromBelow =
+      dy > 0 &&
+      Math.abs(dy - (jelly.radius + other.radius)) < 3;
+
+    if (overlapX && touchingFromBelow) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function resolveCollision(a, b) {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  const minDist = a.radius + b.radius + SPACING;
+
+  if (dist === 0 || dist >= minDist) return;
+
+  const overlap = minDist - dist;
+
+  const nx = dx / dist;
+  const ny = dy / dist;
+
+  a.x -= nx * overlap / 2;
+  a.y -= ny * overlap / 2;
+  b.x += nx * overlap / 2;
+  b.y += ny * overlap / 2;
+
+  a.vx -= nx * 0.15;
+  a.vy -= ny * 0.15;
+  b.vx += nx * 0.15;
+  b.vy += ny * 0.15;
+
+
+  a.isSleeping = false;
+  b.isSleeping = false;
+
+  clampJellyfish(a); 
+  clampJellyfish(b);
+
+}
+
+function drawScore() {
+  ctx.fillStyle = "#004d40";
+  ctx.font = "20px Arial";
+  ctx.textAlign = "left";
+  ctx.fillText(`Score: ${score}`, 10, 30);
+}
+
+const scoreTable = {
+  1: 1,
+  2: 3,
+  3: 6,
+  4: 10,
+  5: 15,
+  6: 21,
+  7: 28,
+  8: 36,
+  9: 45,
+  10: 55,
+  11: 66
+};
+
+function mergeJellyfish(i, j) {
+  const j1 = jellyfishes[i];
+  const j2 = jellyfishes[j];
+
+  if (!j1 || !j2) return;
+  if (j1.level !== j2.level) return;
+
+  score += scoreTable[j1.level];
+
+  const x = (j1.x + j2.x) / 2;
+  const y = (j1.y + j2.y) / 2;
+  const newLevel = j1.level + 1;
+
+  jellyfishes.splice(j, 1);
+  jellyfishes.splice(i, 1);
+
+  if (newLevel > 11) return;
+
+  jellyfishes.push(new Jellyfish(x, y, newLevel));
+}
+
+let overTopStartTime = null;
+const DANGER_TIME = 3000; 
+
+let gameEnded = false;
+
+function saveScoreToServer(name, score) {
+  fetch(
+    RANKING_API +
+      "?action=save" +
+      "&name=" + encodeURIComponent(name) +
+      "&score=" + score
+  );
+}
+
+
+function showRanking() {
+  fetch(RANKING_API + "?action=get")
+    .then(res => res.json())
+    .then(data => {
+      const list = document.getElementById("rankingList");
+      list.innerHTML = "";
+      if (Array.isArray(data)) {
+        // 只取前 10 名
+        data.slice(0, 10).forEach((item, i) => {
+          const li = document.createElement("li");
+          const name = item[0] || "匿名";
+          const scoreVal = item[1] || 0;
+          li.textContent = `${name} - ${scoreVal} 分`;
+          // 如果是目前登入的玩家，標註紅色
+          if (currentUser && name === currentUser) {
+            li.style.color = "#d32f2f";
+            li.style.fontWeight = "bold";
+            li.textContent += " 🔸";
+          }
+          list.appendChild(li);
+        });
+      }
+    }).catch(e => console.error("抓取排行失敗:", e));
+}
+function endGame() {
+  if (gameEnded) return;
+  gameEnded = true;
+  if (currentUser) {
+    fetch(`${RANKING_API}?action=save&user=${encodeURIComponent(currentUser)}&score=${score}`)
+      .then(() => {
+        alert(`遊戲結束！${currentUser} 你的得分是: ${score}`);
+        showRanking();
+      });
+  } else {
+    alert(`遊戲結束！你的得分是: ${score}`);
+  }
+}
 </script>
+  
 </body>
 </html>
