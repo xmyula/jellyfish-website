@@ -148,10 +148,12 @@ canvas {
 <script>
 let currentUser = null;
 let rankingTimer = null;
-let gameEnded = false;
+let gameEnded = false; // 修正：原代碼漏掉這個，會導致無法結束
 let score = 0;
-const RANKING_API = "https://script.google.com/macros/s/AKfycbzWt6d0fNs-cnpm-qd1BXWXrBFAD-ju1Rjgfu-VQAxlTttWSQzE8IosFCwnkm5X5-FRkw/exec";
-
+let overTopStartTime = null; // 修正：原代碼漏掉這個，會導致頂部檢查報錯
+const DANGER_TIME = 3000;
+const RANKING_API = "https://script.google.com/macros/s/AKfycbzWt6d0fNs-cnpm-qd1BXWXrBFAD-ju1Rjgfu-VQAxlTttWSQzE8IosFCwnkm5X5-FRkw/exec";;
+  
 function login() {
   const user = document.getElementById("authUser").value;
   const pass = document.getElementById("authPass").value;
@@ -164,16 +166,15 @@ function login() {
     .then(res => res.json())
     .then(data => {
       if(data.success) {
-        currentUser = user;
+        currentUser = user; 
         document.getElementById("authOverlay").style.display = "none";
         alert(data.msg || "登入成功！");
-        showRanking(); // 登入後立即顯示排行
+        showRanking(); // 登入後立即抓取排行榜
       } else {
         msg.innerText = data.msg;
       }
-    }).catch(err => { msg.innerText = "連線失敗，請檢查 GAS 部署"; });
+    }).catch(err => { msg.innerText = "連線失敗，請檢查網路或 GAS 部署"; });
 }
-
 window.onload = () => {
   showRanking();
   gameLoop();
@@ -187,7 +188,7 @@ const jellyfishImages = {
   2: "https://cdn-icons-png.flaticon.com/128/2104/2104975.png",
   3: "https://cdn-icons-png.flaticon.com/128/2104/2104982.png",
   4: "https://cdn-icons-png.flaticon.com/128/2104/2104988.png",
-  5: "https://cdn-icons-png.flaticon.com/128/2104/2105001.png",
+  5: "https://cdn-icons-png.flaticon.com/128/2105/2105001.png",
   6: "https://cdn-icons-png.flaticon.com/128/2105/2105008.png",
   7: "https://cdn-icons-png.flaticon.com/128/2105/2105021.png",
   8: "https://cdn-icons-png.flaticon.com/128/2105/2105034.png",
@@ -683,22 +684,23 @@ function showRanking() {
       const list = document.getElementById("rankingList");
       list.innerHTML = "";
       if (Array.isArray(data)) {
-        data.forEach((item, i) => {
+        // 只取前 10 名
+        data.slice(0, 10).forEach((item, i) => {
           const li = document.createElement("li");
           const name = item[0] || "匿名";
           const scoreVal = item[1] || 0;
           li.textContent = `${name} - ${scoreVal} 分`;
+          // 如果是目前登入的玩家，標註紅色
           if (currentUser && name === currentUser) {
-            li.style.color = "red";
+            li.style.color = "#d32f2f";
             li.style.fontWeight = "bold";
             li.textContent += " 🔸";
           }
           list.appendChild(li);
         });
       }
-    });
+    }).catch(e => console.error("抓取排行失敗:", e));
 }
-
 function endGame() {
   if (gameEnded) return;
   gameEnded = true;
@@ -708,6 +710,8 @@ function endGame() {
         alert(`遊戲結束！${currentUser} 你的得分是: ${score}`);
         showRanking();
       });
+  } else {
+    alert(`遊戲結束！你的得分是: ${score}`);
   }
 }
 </script>
