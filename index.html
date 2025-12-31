@@ -165,6 +165,34 @@ function login() {
   document.body.appendChild(script);
 }
 
+  // 1. 新增：處理登入回傳的結果
+function handleLogin(data) {
+  const msg = document.getElementById("loginMsg");
+  if (data.success) {
+    currentUser = document.getElementById("authUser").value;
+    document.getElementById("authOverlay").style.display = "none";
+    alert(data.msg || "登入成功！");
+    showRanking(); // 登入後重新整理排行榜
+  } else {
+    msg.innerText = data.msg;
+  }
+}
+
+// 2. 修正：取得排行榜的函數（改用 JSONP 方式）
+function showRanking() {
+  const script = document.createElement("script");
+  script.src = `${RANKING_API}?action=get&callback=handleRanking`;
+  document.body.appendChild(script);
+}
+
+// 3. 確保存檔後能正確顯示訊息（與 GAS 對接）
+function handleSave(data) {
+  if (data.success) {
+    console.log("存檔成功:", data.msg);
+    showRanking();
+  }
+}
+
 function handleSave(data) {
   if(data.ok){
     console.log("分數已存檔:", data.msg);
