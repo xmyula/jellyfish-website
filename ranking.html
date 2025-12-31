@@ -33,17 +33,23 @@ fetch(`${API}?action=get&all=true`)
   .then(data => {
     const tbody = document.getElementById("rankData");
     document.getElementById("status").style.display = "none";
-    document.getElementById("rankTable").style.di
+    document.getElementById("rankTable").style.display = "table";
+
     data.forEach((r, i) => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${i + 1}</td>
-        <td>${r[0]}</td>   <!-- 帳號 -->
-        <td>${r[1]}</td>   <!-- 分數 -->
+        <td>${r[0]}</td>
+        <td>${r[1]}</td>
       `;
       tbody.appendChild(tr);
     });
+  })
+  .catch(err => {
+    document.getElementById("status").textContent = "讀取失敗：" + err;
+    console.error(err);
   });
+  
 </script>
 
 </body>
