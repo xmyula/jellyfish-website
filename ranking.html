@@ -26,7 +26,6 @@
   </div>
 
 <script>
-// 重要：這裡的網址必須跟 index.html 的一樣
 const RANKING_API = "https://script.google.com/macros/s/AKfycbzWt6d0fNs-cnpm-qd1BXWXrBFAD-ju1Rjgfu-VQAxlTttWSQzE8IosFCwnkm5X5-FRkw/exec";
 
 window.onload = function () {
@@ -34,6 +33,9 @@ window.onload = function () {
     .then(res => res.json())
     .then(data => {
       const tbody = document.getElementById("rankData");
+      const status = document.getElementById("status");
+      const table = document.getElementById("rankTable");
+      
       tbody.innerHTML = "";
       if (Array.isArray(data)) {
         data.forEach((item, i) => {
@@ -42,8 +44,10 @@ window.onload = function () {
           tr.insertCell(1).innerText = item[0] || "匿名";
           tr.insertCell(2).innerText = item[1] || 0;
         });
-        document.getElementById("status").style.display = "none";
-        document.getElementById("rankTable").style.display = "table";
+        status.style.display = "none";
+        table.style.display = "table";
+      } else {
+        status.innerText = "尚無資料";
       }
     })
     .catch(err => {
