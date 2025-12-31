@@ -678,61 +678,35 @@ function showRanking() {
   fetch(RANKING_API + "?action=get")
     .then(res => res.json())
     .then(data => {
-      console.log("原始資料檢查：", data); // 按 F12 檢查這裡
       const list = document.getElementById("rankingList");
       list.innerHTML = "";
-
-      if (!Array.isArray(data) || data.length === 0) {
-        list.innerHTML = "<li>目前尚無資料</li>";
-        return;
-      }
-
-data.slice(0, 10).forEach((item, i) => {
-  const list = document.getElementById("rankingList");
-  const li = document.createElement("li");
-  
-  // 核心修正：item[0] 是名字，item[1] 是分數
-  const name = item[0] || "匿名";
-  const scoreVal = item[1] || 0;
-
-  li.textContent = `${name} - ${scoreVal} 分`;
-
-  // 判斷是否為目前玩家
-  if (playerName && name === playerName) {
-    li.classList.add("me");
-    li.textContent += " 🔸";
-  }
-
-  list.appendChild(li);
-});
-    })
-    .catch(err => {
-      console.error("讀取失敗:", err);
-      document.getElementById("rankingList").innerHTML = "<li>連線錯誤</li>";
+      data.forEach((item, i) => {
+        const li = document.createElement("li");
+        const name = item[0] || "匿名";
+        const scoreVal = item[1] || 0; // index 1 是分數
+        li.textContent = `${name} - ${scoreVal} 分`;
+        if (currentUser && name === currentUser) {
+          li.classList.add("me");
+          li.textContent += " 🔸";
+        }
+        list.appendChild(li);
+      });
     });
 }
-
 
 function endGame() {
   if (gameEnded) return;
   gameEnded = true;
-
   stopRankingAutoUpdate();
 
-  setTimeout(() => {
-    const name = prompt("遊戲結束！請輸入你的暱稱：");
-    playerName = name && name.trim() !== "" ? name.trim() : "匿名";
-    saveScoreToServer(playerName, score);
-    setTimeout(showRanking, 800);
-  }, 100);
-}
-    
-let rankingTimer = null;
-let playerName = null;
-let myRank = null
-  
-function startRankingAutoUpdate() {
-  showRanking(); 
+  if (currentUser) {
+    // 自動存檔並刷新排行
+    fetch(`${RANKING_API}?action=save&user=${encodeURIComponent(currentUser)}&score=${score}`)
+      .then(() => {
+        alert(`遊戲結束！${currentUser} 你的得分是: ${score}`);
+        showRanking();
+      });
+  }
 }
 
 function stopRankingAutoUpdate() {
@@ -743,7 +717,7 @@ function stopRankingAutoUpdate() {
 }
 
 const RANKING_API =
-  "https://script.google.com/macros/s/AKfycbyWncfyzhAEJNmUmGCd7NdZ31qKItSY9_46asn5DFdaH7AmMADuH6t_dzOUFJB7c_0T9w/exec";
+  "https://script.google.com/macros/s/AKfycbzWt6d0fNs-cnpm-qd1BXWXrBFAD-ju1Rjgfu-VQAxlTttWSQzE8IosFCwnkm5X5-FRkw/exec";
 
 </script>
 
