@@ -26,34 +26,24 @@
   </div>
 
 <script>
-const RANKING_API = "https://script.google.com/macros/s/AKfycbzWt6d0fNs-cnpm-qd1BXWXrBFAD-ju1Rjgfu-VQAxlTttWSQzE8IosFCwnkm5X5-FRkw/exec";
+const API = "https://script.google.com/macros/s/你的部署ID/exec";
 
-window.onload = function () {
-  fetch(RANKING_API + "?action=get&all=true")
-    .then(res => res.json())
-    .then(data => {
-      const tbody = document.getElementById("rankData");
-      const status = document.getElementById("status");
-      const table = document.getElementById("rankTable");
-      
-      tbody.innerHTML = "";
-      if (Array.isArray(data)) {
-        data.forEach((item, i) => {
-          const tr = tbody.insertRow();
-          tr.insertCell(0).innerText = i + 1;
-          tr.insertCell(1).innerText = item[0] || "匿名";
-          tr.insertCell(2).innerText = item[1] || 0;
-        });
-        status.style.display = "none";
-        table.style.display = "table";
-      } else {
-        status.innerText = "尚無資料";
-      }
-    })
-    .catch(err => {
-      document.getElementById("status").innerText = "連線失敗：" + err.message;
+fetch(`${API}?action=get&all=true`)
+  .then(res => res.json())
+  .then(data => {
+    const tbody = document.getElementById("list");
+
+    data.forEach((r, i) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${i + 1}</td>
+        <td>${r[0]}</td>   <!-- 帳號 -->
+        <td>${r[1]}</td>   <!-- 分數 -->
+      `;
+      tbody.appendChild(tr);
     });
-};
+  });
 </script>
+
 </body>
 </html>
