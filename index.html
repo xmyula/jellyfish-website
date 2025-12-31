@@ -148,11 +148,10 @@ canvas {
 <script>
 let currentUser = null;
 let rankingTimer = null;
-let gameEnded = false; // 修正：原代碼漏掉這個，會導致無法結束
-let score = 0;
-let overTopStartTime = null; // 修正：原代碼漏掉這個，會導致頂部檢查報錯
+let gameEnded = false; 
+let overTopStartTime = null; 
 const DANGER_TIME = 3000;
-const RANKING_API = "https://script.google.com/macros/s/AKfycbzWt6d0fNs-cnpm-qd1BXWXrBFAD-ju1Rjgfu-VQAxlTttWSQzE8IosFCwnkm5X5-FRkw/exec";;
+const RANKING_API = "https://script.google.com/macros/s/AKfycbzWt6d0fNs-cnpm-qd1BXWXrBFAD-ju1Rjgfu-VQAxlTttWSQzE8IosFCwnkm5X5-FRkw/exec";
   
 function login() {
   const user = document.getElementById("authUser").value;
