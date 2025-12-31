@@ -28,21 +28,22 @@
 <script>
 const RANKING_API = "https://script.google.com/macros/s/AKfycbwpg7rHALUnoCVj79YUwcZRguo74M57OGWBXEmQP03x3vp4g_3hFyz9M9yu0dSP33NK2w/exec";
 
-window.onload = function () {
-  // 注意這裡網址加了 &all=true
+  window.onload = function () {
   fetch(RANKING_API + "?action=get&all=true")
     .then(res => res.json())
     .then(data => {
-      console.log("排行榜完整資料：", data);
-
-      const status = document.getElementById("status");
-      const table = document.getElementById("rankTable");
       const tbody = document.getElementById("rankData");
-
-      if (!Array.isArray(data) || data.length === 0) {
-        status.innerText = "目前尚無排行榜資料";
-        return;
-      }
+      tbody.innerHTML = "";
+      data.forEach((item, i) => {
+        const tr = tbody.insertRow();
+        tr.insertCell(0).innerText = i + 1;
+        tr.insertCell(1).innerText = item[0] || "匿名"; // 名字
+        tr.insertCell(2).innerText = item[1] || 0;    // 分數 (對應 GAS 的 r[2])
+      });
+      document.getElementById("status").style.display = "none";
+      document.getElementById("rankTable").style.display = "table";
+    });
+};
 
       status.style.display = "none";
       table.style.display = "table";
