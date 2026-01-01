@@ -151,30 +151,25 @@ let rankingTimer = null;
 let gameEnded = false; 
 let score = 0; 
 const RANKING_API = "https://script.google.com/macros/s/AKfycbzPg74W8-4MP9F96ThRlpD3lplTMp2k0G3fGfYFQw4O8mXpvgWhLeecj1l2IEM8BFJWVA/exec";
-// --- 修正後的 API 處理函數 ---
 
-// 1. 取得排行榜 (使用 JSONP)
 function showRanking() {
   const script = document.createElement("script");
-  // 注意：確保 action=get
   script.src = `${RANKING_API}?action=get&callback=handleRanking`;
   document.body.appendChild(script);
 }
 
-// 2. 處理登入結果
 function handleLogin(data) {
   const msg = document.getElementById("loginMsg");
   if (data.success) {
     currentUser = document.getElementById("authUser").value;
     document.getElementById("authOverlay").style.display = "none";
     alert(data.msg || "登入成功！");
-    showRanking(); // 登入後更新排行榜
+    showRanking(); 
   } else {
     msg.innerText = data.msg;
   }
 }
 
-// 3. 處理存檔結果
 function handleSave(data) {
   console.log("存檔回傳:", data);
   showRanking(); 
@@ -432,10 +427,6 @@ canvas.addEventListener("mousemove", e => {
     clampJellyfish(currentJellyfish);
   }
 });
-
-/* =========================
-   ④ 測試：畫一隻水母
-========================= */
 
 function createNewJellyfish() {
   const x = Math.random() * (canvas.width - 60) + 30;
